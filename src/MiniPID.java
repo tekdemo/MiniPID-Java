@@ -3,11 +3,12 @@
 
 
 /**
-* Tiny, easy to use PID implementation with advanced usage capability
+* Tiny, easy to use PID implementation with advanced controller capability.<br> 
 * Minimal usage:<br>
 * setPID(p,i,d); <br>
-* ...code... <br>
-* output=getOutput(target); //call repeatedly
+* ...looping code...{ <br>
+* output=getOutput(sensorvalue,target); <br>
+* }
 * 
 * @see http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-direction/improving-the-beginners-pid-introduction
 */
@@ -45,14 +46,30 @@ class MiniPID{
   //**********************************
   //Configuration functions
   //**********************************
-  public void setP(double p){P=p;}
+  /**
+   * Configure the Proportional gain parameter. <br>
+   * This responds quicly to changes in setpoint, and provides most of the initial driving force
+   * to make corrections. <br>
+   * Some systems can be used with only a P gain, and many can be operated with only PI.<br>
+   * For position based controllers, this is the first parameter to tune, with I second. <br>
+   * For rate controlled systems, this is often the second after F.
+   *  
+   * @param p Proportional gain. Affects output according to <b>output+=P*(setpoint-current_value)</b>
+   */
+  public void setP(double p){
+	  P=p;
+	  checkSigns();
+	  }
   
   /**
-   * Changes the I parameter 
-   * Scales the accumulated error to avoid output errors. <br>
-   * Eg, doubling the I term cuts the accumulated error in half, which results in the 
-   * output change due to the I term constant during the transition
-   * @param i New gain value for the I term
+   * Changes the I parameter <br>
+   * This is used for overcoming disturbances, and ensuring that the controller always gets to the control mode. 
+   * Typically tuned second for "Position" based modes, and third for "Rate" or continuous based modes. <br>
+   * Affects output through <b>output+=previous_errors*Igain ;previous_errors+=current_error</b>
+   * 
+   * @see {@link #setMaxIOutput(double) setMaxIOutput} for how to restrict
+   *
+   * @param i New gain value for the Integral term
    */
   public void setI(double i){
 	  if(I!=0){
@@ -63,17 +80,37 @@ class MiniPID{
 	  }
 	  I=i;
 	  checkSigns();
+	   /* Implimentation note: 
+	   * This Scales the accumulated error to avoid output errors. 
+	   * As an exampledoubling the I term cuts the accumulated error in half, which results in the 
+	   * output change due to the I term constant during the transition. 
+	   *
+	   */
   } 
   public void setD(double d){
 	  D=d;
 	  checkSigns();
 	  }
+  /**
+   * Configure the FeedForward parameter. <br>
+   * This is excellent for Velocity, rate, and other  continuous control modes where you can 
+   * expect a rough output value based solely on the setpoint.<br>
+   * Should not be used in "position" based control modes.
+   * 
+   * @param f Feed forward gain. Affects output according to <b>output+=F*Setpoint</b>;
+   */
   public void setF(double f){
 	  F=f;
 	  checkSigns();
 	  }
-  public void setPID(double p, double i, double d){setP(p);setI(i);setD(D);}
-  public void setPID(double p, double i, double d,double f){setP(p);setI(i);setD(d);setF(f);}
+  public void setPID(double p, double i, double d){
+	  P=p;I=i;D=d;
+	  checkSigns();
+  }
+  public void setPID(double p, double i, double d,double f){
+	  P=p;I=i;D=d;F=f;
+	  checkSigns();
+  }
   
   /**
    * Set the maximum output value contributed by the I component of the system

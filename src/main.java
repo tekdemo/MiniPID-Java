@@ -12,7 +12,7 @@ public class main {
 		//miniPID=new MiniPID( .1 , 0 , .1);
 		//miniPID=new MiniPID( .2 , 0.01 , .1);
 		miniPID=new MiniPID( .3 , 0.01 , 0.1);
-		miniPID.setMaxOutput(-50,10);
+		miniPID.setMaxOutput(-50,50);
 		miniPID.setMaxIOutput(2);
 //		miniPID.setDirection(false);
 		
@@ -27,7 +27,7 @@ public class main {
 		System.err.printf("Target,Actual\tOutput\tError\n");
 		//System.err.printf("Output\tP\tI\tD\n");
 
-		/* Position based test code
+		//* Position based test code
 		for (int i=0;i<100 ;i++){
 			
 			//if(i==50)miniPID.setI(.05);
@@ -36,13 +36,13 @@ public class main {
 			//if(i>50 && i%4==0)target=target+(Math.random()-.5)*50;
 			
 			output=miniPID.getOutput(actual,target);
-
+			actual=actual+output;
+			
 			//System.out.println("=========================="); 
 			//System.out.printf("Current: %3.2f , Actual: %3.2f, Error: %3.2f\n",actual, output, (target-actual));
 			System.err.printf("%3.2f\t%3.2f\t%3.2f\t%3.2f\n",target,actual, output, (target-actual));
 			
 			
-			actual=actual+output;
 			if(i>50 && i%5==0)actual+=(Math.random()-.5)*20;
 		}
 		//*/
