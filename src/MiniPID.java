@@ -3,11 +3,13 @@
 
 
 /**
-* Tiny, easy to use PID implimentation with advanced usage capability
+* Tiny, easy to use PID implementation with advanced usage capability
 * Minimal usage:<br>
 * setPID(p,i,d); <br>
 * ...code... <br>
 * output=getOutput(target); //call repeatedly
+* 
+* @see http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-direction/improving-the-beginners-pid-introduction
 */
 class MiniPID{
   private double P=0;
@@ -26,6 +28,9 @@ class MiniPID{
   private double setpoint=0;
   
   private double lastActual=0;
+  
+  private boolean firstRun=true;
+  private boolean reversed=false;
    
   //**********************************
   //Configuration functions
@@ -57,10 +62,16 @@ class MiniPID{
 		  maxError=maxIOutput/i;
 	  }
 	  I=i;
+	  checkSigns();
   } 
-  
-  public void setD(double d){D=d;}
-  public void setF(double f){F=f;}
+  public void setD(double d){
+	  D=d;
+	  checkSigns();
+	  }
+  public void setF(double f){
+	  F=f;
+	  checkSigns();
+	  }
   public void setPID(double p, double i, double d){setP(p);setI(i);setD(D);}
   public void setPID(double p, double i, double d,double f){setP(p);setI(i);setD(d);setF(f);}
   
@@ -86,6 +97,13 @@ class MiniPID{
 	  minOutput=minimum;
   }
   
+  /**
+   * Set the operating direction of the PID controller
+   * @param reversed Set true to reverse PID output
+   */
+  public void  setDirection(boolean reversed){
+  	this.reversed=reversed;
+  }
   //**********************************
   //Primary operating functions
   //**********************************
@@ -108,6 +126,13 @@ class MiniPID{
     double Doutput;
     double Foutput;
     
+    //If this is our first time running this, we don't actually _have_ a previous sensor reading. 
+    //Sanely assume it was exactly where it is now.
+    if(firstRun){
+    	lastActual=actual;
+    	firstRun=false;
+    }
+
     //Do the simple parts of the calculations
     double error=setpoint-actual;
 
@@ -119,10 +144,12 @@ class MiniPID{
     //the correct thing, and small values helps prevent output spikes and overshoot 
     Doutput= -D*(actual-lastActual);
     lastActual=actual;
+
     
     //Calculate F output. Notice, this depends only on the setpoint, and not the error. 
     Foutput=F*setpoint;
     
+
     //These three are easy, and can be added without any hassle
     output= Foutput + Poutput + Doutput;
     
@@ -163,7 +190,7 @@ class MiniPID{
     	}
     
     //Get a test printline 
-    //System.out.printf("Final output %5.2f [ %5.2f, %5.2f , %5.2f  ], eSum %.2f\n",output,P*error, Ioutput, -D*(setpoint-prevSetpoint),errorSum );
+//    /System.out.printf("Final output %5.2f [ %5.2f, %5.2f , %5.2f  ], eSum %.2f\n",output,Poutput, Ioutput, Doutput,errorSum );
     //System.out.printf("%5.2f\t%5.2f\t%5.2f\t%5.2f\n",output,Poutput, Ioutput, Doutput );
 
     return output;
@@ -185,6 +212,13 @@ class MiniPID{
   		return getOutput(actual,setpoint);
   	}
   	  
+    /**
+     * Resets the controller. This erases the I term buildup, and removes D gain on the next loop.
+     */
+    public void reset(){
+    	firstRun=true;
+    	errorSum=0;
+    }
   	//**************************************
   	// Helper functions
   	//**************************************
@@ -202,7 +236,6 @@ class MiniPID{
       return value;
     }  
     
-    
     /**
      * Test if the value is within the min and max, inclusive
      * @param value to test
@@ -211,7 +244,28 @@ class MiniPID{
      * @return
      */
     private boolean bounded(double value, double min, double max){
-        return (value < max) && (value >min);
+        return (min<value) && (value<max);
     }
+    
+    /**
+     * To operate correctly, all PID parameters require the same sign
+     * This should align with the {@literal}reversed value
+     */
+    private void checkSigns(){
+    	if(reversed){	//all values should be below zero
+    		if(P>0) P*=-1;
+    		if(I>0) I*=-1;
+    		if(D>0) D*=-1;
+    		if(F>0) F*=-1;
+    	}
+    	else{	//all values should be below zero
+    		if(P<0) P*=-1;
+    		if(I<0) I*=-1;
+    		if(D<0) D*=-1;
+    		if(F<0) F*=-1;
+    	}
+    }
+    
+    
     
 }
