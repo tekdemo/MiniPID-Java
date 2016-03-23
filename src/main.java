@@ -9,9 +9,11 @@ public class main {
 		MiniPID miniPID; 
 		
 		miniPID=new MiniPID( .25,0.01,.4);
-		miniPID.setMaxOutput(30);
+		miniPID=new MiniPID( .25,0.01,2);
+		miniPID.setMaxOutput(10);
 		miniPID.setMaxIOutput(2);
-//		/miniPID.setRampRate(3);
+		//miniPID.setRampRate(3);
+		miniPID.setOutputFilter(.3);
 		
 		double target=100;
 		

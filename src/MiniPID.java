@@ -1,7 +1,3 @@
- 
-//Minipid
-
-
 /**
 * Tiny, easy to use PID implementation with advanced controller capability.<br> 
 * Minimal usage:<br>
@@ -35,6 +31,8 @@ class MiniPID{
 
   private double rampRate=0;
   private double lastOutput=0;
+  
+  private double outputFilter=0;
    
   //**********************************
   //Configuration functions
@@ -260,9 +258,12 @@ class MiniPID{
     if(minOutput!=maxOutput){ 
     	output=constrain(output, minOutput,maxOutput);
     	}
+    if(outputFilter!=0){
+    	output=lastOutput*outputFilter+output*(1-outputFilter);
+    }
     
     //Get a test printline 
-//    /System.out.printf("Final output %5.2f [ %5.2f, %5.2f , %5.2f  ], eSum %.2f\n",output,Poutput, Ioutput, Doutput,errorSum );
+	//    /System.out.printf("Final output %5.2f [ %5.2f, %5.2f , %5.2f  ], eSum %.2f\n",output,Poutput, Ioutput, Doutput,errorSum );
     //System.out.printf("%5.2f\t%5.2f\t%5.2f\t%5.2f\n",output,Poutput, Ioutput, Doutput );
 
     lastOutput=output;
@@ -293,8 +294,22 @@ class MiniPID{
     	errorSum=0;
     }
 
+    /**Set the maximum rate the output can increase per cycle. 
+     * @param rate
+     */
     public void setRampRate(double rate){
     	rampRate=rate;
+    }
+    /**Set a filter on the output to reduce sharp oscillations. <br>
+     * 0.1 is likely a sane starting value. Larger values P and D oscillations, but force larger I values.
+     * Uses an exponential rolling sum filter, according to a simple <br>
+     * <pre>output*(1-strength)*sum(0..n){output*strength^n}</pre>
+     * @param output valid between [0..1), meaning [current output only.. historical output only)
+     */
+    public void setOutputFilter(double strength){
+    	if(strength==0 || bounded(strength,0,1)){
+    	outputFilter=strength;
+    	}
     }
     
     //**************************************
