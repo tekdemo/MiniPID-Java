@@ -32,6 +32,9 @@ class MiniPID{
   
   private boolean firstRun=true;
   private boolean reversed=false;
+
+  private double rampRate=0;
+  private double lastOutput=0;
    
   //**********************************
   //Configuration functions
@@ -80,9 +83,9 @@ class MiniPID{
 	  }
 	  I=i;
 	  checkSigns();
-	   /* Implimentation note: 
+	   /* Implementation note: 
 	   * This Scales the accumulated error to avoid output errors. 
-	   * As an exampledoubling the I term cuts the accumulated error in half, which results in the 
+	   * As an example doubling the I term cuts the accumulated error in half, which results in the 
 	   * output change due to the I term constant during the transition. 
 	   *
 	   */
@@ -91,8 +94,8 @@ class MiniPID{
 	  D=d;
 	  checkSigns();
 	  }
-  /**
-   * Configure the FeedForward parameter. <br>
+  
+  /**Configure the FeedForward parameter. <br>
    * This is excellent for Velocity, rate, and other  continuous control modes where you can 
    * expect a rough output value based solely on the setpoint.<br>
    * Should not be used in "position" based control modes.
@@ -103,17 +106,23 @@ class MiniPID{
 	  F=f;
 	  checkSigns();
 	  }
+  
+  /** Create a new PID object. 
+   * @param p Proportional gain. Large if large difference between setpoint and target. 
+   * @param i Integral gain.  Becomes large if setpoint cannot reach target quickly. 
+   * @param d Derivative gain. Responds quickly to large changes in error. Small values prevents P and I terms from causing overshoot.
+   */
   public void setPID(double p, double i, double d){
 	  P=p;I=i;D=d;
 	  checkSigns();
   }
+  
   public void setPID(double p, double i, double d,double f){
 	  P=p;I=i;D=d;F=f;
 	  checkSigns();
   }
   
-  /**
-   * Set the maximum output value contributed by the I component of the system
+  /**Set the maximum output value contributed by the I component of the system
    * This can be used to prevent large windup issues and make tuning simpler
    * @param maximum. Units are the same as the expected output value
    */
@@ -126,24 +135,44 @@ class MiniPID{
 	  if(I!=0){
 		  maxError=maxIOutput/I;
 	  }
-	  }
+  }
+  
+  /**Specify a  maximum output. If a single parameter is specified, the minimum is 
+   * set to (-maximum).
+   * @param output 
+   */
   public void setMaxOutput(double output){ setMaxOutput(-output,output);}
+  
+  /**
+   * Specify a  maximum output.
+   * @param minimum possible output value
+   * @param maximum possible output value
+   */
   public void setMaxOutput(double minimum,double maximum){
 	  if(maximum<minimum)return;
 	  maxOutput=maximum;
 	  minOutput=minimum;
+	  
+	  // Ensure the bounds of the I term are within the bounds of the allowable output swing
+	  if(maxIOutput==0 || maxIOutput>(maximum-minimum) ){
+		  setMaxIOutput(maximum-minimum);
+	  }
   }
   
-  /**
-   * Set the operating direction of the PID controller
+  /** Set the operating direction of the PID controller
    * @param reversed Set true to reverse PID output
    */
   public void  setDirection(boolean reversed){
   	this.reversed=reversed;
   }
+  
   //**********************************
   //Primary operating functions
   //**********************************
+  
+  /**Set the target for the PID calculations
+   * @param setpoint
+   */
   public void setSetpoint(double setpoint){
 	  this.setpoint=setpoint;
   } 
@@ -163,32 +192,32 @@ class MiniPID{
     double Doutput;
     double Foutput;
     
-    //If this is our first time running this, we don't actually _have_ a previous sensor reading. 
-    //Sanely assume it was exactly where it is now.
-    if(firstRun){
-    	lastActual=actual;
-    	firstRun=false;
-    }
 
     //Do the simple parts of the calculations
     double error=setpoint-actual;
 
+    //Calculate F output. Notice, this depends only on the setpoint, and not the error. 
+    Foutput=F*setpoint;
+
     //Calculate P term
     Poutput=P*error;   
     
+    //If this is our first time running this, we don't actually _have_ a previous input or output. 
+    //For sensor, sanely assume it was exactly where it is now.
+    //For last output, we can assume it's the current time-independent outputs. 
+    if(firstRun){
+    	lastActual=actual;
+    	lastOutput=Poutput+Foutput;
+    	firstRun=false;
+    }
+
     //Calculate D Term
     //Note, this is negative. This actually "slows" the system if it's doing
     //the correct thing, and small values helps prevent output spikes and overshoot 
+
     Doutput= -D*(actual-lastActual);
     lastActual=actual;
 
-    
-    //Calculate F output. Notice, this depends only on the setpoint, and not the error. 
-    Foutput=F*setpoint;
-    
-
-    //These three are easy, and can be added without any hassle
-    output= Foutput + Poutput + Doutput;
     
     
     //The Iterm is more complex. There's several things to factor in to make it easier to deal with.
@@ -200,17 +229,20 @@ class MiniPID{
     	Ioutput=constrain(Ioutput,-maxIOutput,maxIOutput); 
     }    
 
-    //OK! We've constrained the outputs, so add to the output value
-    output += Ioutput;
-    
-     
+
+    //And, finally, we can just add the terms up
+    output=Foutput + Poutput + Ioutput + Doutput;
+  
     //Figure out what we're doing with the error.
-    if( minOutput!=maxOutput && !bounded(output, minOutput,maxOutput) ){
+    if(minOutput!=maxOutput && !bounded(output, minOutput,maxOutput) ){
     	errorSum=error; 
     	// reset the error sum to a sane level
     	// Setting to current error ensures a smooth transition when the P term 
     	// decreases enough for the I term to start acting upon the controller
     	// From that point the I term will build up as would be expected
+    }
+    else if(rampRate!=0 && !bounded(output, lastOutput-rampRate,lastOutput+rampRate) ){
+    	errorSum=error; 
     }
     else if(maxIOutput!=0){
 		errorSum=constrain(errorSum+error,-maxError,maxError);
@@ -221,7 +253,10 @@ class MiniPID{
 		errorSum+=error;
 	}
     
-    //Restrict output to our specified limits
+    //Restrict output to our specified output and ramp limits
+    if(rampRate!=0){
+    	output=constrain(output, lastOutput-rampRate,lastOutput+rampRate);
+    }
     if(minOutput!=maxOutput){ 
     	output=constrain(output, minOutput,maxOutput);
     	}
@@ -230,6 +265,7 @@ class MiniPID{
 //    /System.out.printf("Final output %5.2f [ %5.2f, %5.2f , %5.2f  ], eSum %.2f\n",output,Poutput, Ioutput, Doutput,errorSum );
     //System.out.printf("%5.2f\t%5.2f\t%5.2f\t%5.2f\n",output,Poutput, Ioutput, Doutput );
 
+    lastOutput=output;
     return output;
   	}
   
@@ -256,7 +292,12 @@ class MiniPID{
     	firstRun=true;
     	errorSum=0;
     }
-  	//**************************************
+
+    public void setRampRate(double rate){
+    	rampRate=rate;
+    }
+    
+    //**************************************
   	// Helper functions
   	//**************************************
 

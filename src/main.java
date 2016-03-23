@@ -8,13 +8,10 @@ public class main {
 		// TODO Auto-generated method stub
 		MiniPID miniPID; 
 		
-		//miniPID=new MiniPID( .05 , 0 , .1);
-		//miniPID=new MiniPID( .1 , 0 , .1);
-		//miniPID=new MiniPID( .2 , 0.01 , .1);
-		miniPID=new MiniPID( .3 , 0.01 , 0.1);
-		miniPID.setMaxOutput(-50,50);
+		miniPID=new MiniPID( .25,0.01,.4);
+		miniPID.setMaxOutput(30);
 		miniPID.setMaxIOutput(2);
-//		miniPID.setDirection(false);
+//		/miniPID.setRampRate(3);
 		
 		double target=100;
 		
@@ -31,7 +28,7 @@ public class main {
 		for (int i=0;i<100 ;i++){
 			
 			//if(i==50)miniPID.setI(.05);
-			if(i==25)target=(50);
+			if(i==60)target=(50);
 			//if(i==75)target=(100);
 			//if(i>50 && i%4==0)target=target+(Math.random()-.5)*50;
 			
@@ -43,7 +40,7 @@ public class main {
 			System.err.printf("%3.2f\t%3.2f\t%3.2f\t%3.2f\n",target,actual, output, (target-actual));
 			
 			
-			if(i>50 && i%5==0)actual+=(Math.random()-.5)*20;
+			//if(i>80 && i%5==0)actual+=(Math.random()-.5)*20;
 		}
 		//*/
 		
