@@ -1,5 +1,5 @@
 /**
-* Tiny, easy to use PID implementation with advanced controller capability.<br> 
+* Small, easy to use PID implementation with advanced controller capability.<br> 
 * Minimal usage:<br>
 * setPID(p,i,d); <br>
 * ...looping code...{ <br>
@@ -29,10 +29,12 @@ class MiniPID{
   private boolean firstRun=true;
   private boolean reversed=false;
 
-  private double rampRate=0;
+  private double outputRampRate=0;
   private double lastOutput=0;
   
   private double outputFilter=0;
+  
+  private double setpointRange=0;
    
   //**********************************
   //Configuration functions
@@ -182,15 +184,19 @@ class MiniPID{
   * @return calculated output value for driving the actual to the target 
   */
   public double getOutput(double actual, double setpoint){
-    setSetpoint(setpoint);
-
-    double output=0;
+    double output;
     double Poutput;
     double Ioutput;
     double Doutput;
     double Foutput;
     
+	this.setpoint=setpoint;
 
+	//Ramp the setpoint used for calculations if user has opted to do so
+    if(setpointRange!=0){
+    	setpoint=constrain(setpoint,actual-setpointRange,actual+setpointRange);
+    }
+    
     //Do the simple parts of the calculations
     double error=setpoint-actual;
 
@@ -209,6 +215,7 @@ class MiniPID{
     	firstRun=false;
     }
 
+    
     //Calculate D Term
     //Note, this is negative. This actually "slows" the system if it's doing
     //the correct thing, and small values helps prevent output spikes and overshoot 
@@ -239,7 +246,7 @@ class MiniPID{
     	// decreases enough for the I term to start acting upon the controller
     	// From that point the I term will build up as would be expected
     }
-    else if(rampRate!=0 && !bounded(output, lastOutput-rampRate,lastOutput+rampRate) ){
+    else if(outputRampRate!=0 && !bounded(output, lastOutput-outputRampRate,lastOutput+outputRampRate) ){
     	errorSum=error; 
     }
     else if(maxIOutput!=0){
@@ -252,8 +259,8 @@ class MiniPID{
 	}
     
     //Restrict output to our specified output and ramp limits
-    if(rampRate!=0){
-    	output=constrain(output, lastOutput-rampRate,lastOutput+rampRate);
+    if(outputRampRate!=0){
+    	output=constrain(output, lastOutput-outputRampRate,lastOutput+outputRampRate);
     }
     if(minOutput!=maxOutput){ 
     	output=constrain(output, minOutput,maxOutput);
@@ -297,9 +304,20 @@ class MiniPID{
     /**Set the maximum rate the output can increase per cycle. 
      * @param rate
      */
-    public void setRampRate(double rate){
-    	rampRate=rate;
+    public void setOutputRampRate(double rate){
+    	outputRampRate=rate;
     }
+    
+    /** Set a limit on how far the setpoint can be from the current position
+     * <br>Can simplify tuning by helping tuning over a small range applies to a much larger range. 
+     * <br>This limits the reactivity of P term, and restricts impact of large D term
+     * during large setpoint adjustments. Increases lag and I term if range is too small.
+     * @param range
+     */
+    public void setSetpointRange(double range){
+    	setpointRange=range;
+    }
+    
     /**Set a filter on the output to reduce sharp oscillations. <br>
      * 0.1 is likely a sane starting value. Larger values P and D oscillations, but force larger I values.
      * Uses an exponential rolling sum filter, according to a simple <br>
@@ -351,7 +369,7 @@ class MiniPID{
     		if(D>0) D*=-1;
     		if(F>0) F*=-1;
     	}
-    	else{	//all values should be below zero
+    	else{	//all values should be above zero
     		if(P<0) P*=-1;
     		if(I<0) I*=-1;
     		if(D<0) D*=-1;

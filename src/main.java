@@ -9,12 +9,12 @@ public class main {
 		MiniPID miniPID; 
 		
 		miniPID=new MiniPID( .25,0.01,.4);
-		miniPID=new MiniPID( .25,0.01,2);
 		miniPID.setMaxOutput(10);
-		miniPID.setMaxIOutput(2);
-		//miniPID.setRampRate(3);
-		miniPID.setOutputFilter(.3);
-		
+		//miniPID.setMaxIOutput(2);
+		//miniPID.setOutputRampRate(3);
+		//miniPID.setOutputFilter(.3);
+		miniPID.setSetpointRange(40);
+
 		double target=100;
 		
 		double actual=0;
