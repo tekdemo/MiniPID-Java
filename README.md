@@ -11,32 +11,32 @@ This is a small, fully self contained PID class designed to help provide simple,
 - Be simple enough to be used in "transient" or one-off control sequences 
 
 ## Features
-### PID Functions
+##### PID Functions
 True to the name, the main purpose of this class is PID control.
 
-### Feed Forward rate setting. 
+##### Feed Forward rate setting. 
 Provides an "Expected output", helpful when doing velocity control systems. 
 
-### Setpoint Range
+##### Setpoint Range
 Force the PID system to cap the setpoint to a range near the current input values. This allows you to tune the PID in a smaller range, and have it perform sanely during large setpoint changes. 
 
-### Output ramping
+##### Output ramping
 Allows a maximum rate of change on the output, preventing jumps in output during setpoint changes
 
-### Output Range
+##### Output Range
 Adjustable min and maximum range, so the output can directly drive a variety of systems. 
 
-### Output Filtering
+##### Output Filtering
 Helps smooth the output, preventing high-frequency oscillations.
 
-### I term restriction
+##### I term restriction
 Allows you to specify a maximum output value the I term will generate. This allows active error correction, with minimal risk of I-term windup. 
 
-### Smart I term buildup
+##### Smart I term buildup
 The I term and summed error will never increase if the system is already doing everything permitted to correct the system error. 
 
-### Simple and automatic API. 
-No need for lots of convoluted calculation functions. Simply using `getOutput()` is probably the only function you need once the system is configured. 
+##### Simple API. 
+No need for lots of convoluted calculation functions, or asyncronous calculation modes. After configuration, `getOutput()` is probably the only function you need. 
 
 ## Usage
 A bare bones PID system could look like this. 
