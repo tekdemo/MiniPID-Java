@@ -10,7 +10,7 @@ public class main {
 		MiniPID miniPID; 
 		
 		miniPID=new MiniPID( .25,0.01,.4);
-		miniPID.setMaxOutput(10);
+		miniPID.setOutputLimits(10);
 		//miniPID.setMaxIOutput(2);
 		//miniPID.setOutputRampRate(3);
 		//miniPID.setOutputFilter(.3);

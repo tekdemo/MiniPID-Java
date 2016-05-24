@@ -85,8 +85,8 @@ For this class of systems, it's helpful to consider the F term the primary varia
 
 For tuning, F as the primary variable results in P, I, and D being used for minor corrections, with a much smaller system error. P and I will generally be sufficient, and can correct for non-linearities in the system such as such as drag, inertia, friction, and disturbances.
 
-#### `setMaxOutput(double minimum,double maximum)`
-#### `setMaxOutput(double output)`
+#### `setOutputLimits(double minimum,double maximum)`
+#### `setOutputLimits(double output)`
 Optional, but highly recommended to set. The set the output limits, and ensure the controller behaves when reaching the maximum output capabilities of your physical system. 
 
 #### `setMaxIOutput(double maximum)`
