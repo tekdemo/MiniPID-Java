@@ -42,9 +42,11 @@ public class MiniPID{
   //**********************************
   public MiniPID(double p, double i, double d){
     P=p; I=i; D=d;
+    checkSigns();
     }
   public MiniPID(double p, double i, double d, double f){
     P=p; I=i; D=d; F=f;
+    checkSigns();
     }
   
   //**********************************
