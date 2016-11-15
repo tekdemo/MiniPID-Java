@@ -9,7 +9,7 @@ package com.stormbots;
 * 
 * @see http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-direction/improving-the-beginners-pid-introduction
 */
-class MiniPID{
+public class MiniPID{
   private double P=0;
   private double I=0;
   private double D=0;
@@ -40,10 +40,10 @@ class MiniPID{
   //**********************************
   //Configuration functions
   //**********************************
-  MiniPID(double p, double i, double d){
+  public MiniPID(double p, double i, double d){
     P=p; I=i; D=d;
     }
-  MiniPID(double p, double i, double d, double f){
+  public MiniPID(double p, double i, double d, double f){
     P=p; I=i; D=d; F=f;
     }
   
