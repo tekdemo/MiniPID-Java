@@ -1,4 +1,4 @@
-# minPID
+# miniPID
 
 This is a small, fully self contained PID class designed to help provide simple, efficient tuning, and simple integration wherever any level of PID control might be needed. 
 
